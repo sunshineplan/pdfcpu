@@ -27,8 +27,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hhrutter/tiff"
-	"github.com/pdfcpu/pdfcpu/pkg/filter"
+	"github.com/sunshineplan/tiff"
+	"github.com/sunshineplan/pdfcpu/pkg/filter"
 )
 
 var inDir, outDir string

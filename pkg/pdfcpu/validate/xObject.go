@@ -17,8 +17,8 @@ limitations under the License.
 package validate
 
 import (
-	"github.com/pdfcpu/pdfcpu/pkg/filter"
-	pdf "github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
+	"github.com/sunshineplan/pdfcpu/pkg/filter"
+	pdf "github.com/sunshineplan/pdfcpu/pkg/pdfcpu"
 	"github.com/pkg/errors"
 )
 

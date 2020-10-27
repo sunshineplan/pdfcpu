@@ -21,7 +21,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
+	"github.com/sunshineplan/pdfcpu/pkg/pdfcpu"
 )
 
 // Info returns information about rs.

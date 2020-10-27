@@ -1,11 +1,11 @@
 # pdfcpu: a Go PDF processor
 
 [![Build Status](https://travis-ci.org/pdfcpu/pdfcpu.svg?branch=master)](https://travis-ci.org/pdfcpu/pdfcpu)
-[![GoDoc](https://godoc.org/github.com/pdfcpu/pdfcpu?status.svg)](https://godoc.org/github.com/pdfcpu/pdfcpu)
+[![GoDoc](https://godoc.org/github.com/sunshineplan/pdfcpu?status.svg)](https://godoc.org/github.com/sunshineplan/pdfcpu)
 [![Coverage Status](https://coveralls.io/repos/github/pdfcpu/pdfcpu/badge.svg?branch=master)](https://coveralls.io/github/pdfcpu/pdfcpu?branch=master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/pdfcpu/pdfcpu)](https://goreportcard.com/report/github.com/pdfcpu/pdfcpu)
+[![Go Report Card](https://goreportcard.com/badge/github.com/sunshineplan/pdfcpu)](https://goreportcard.com/report/github.com/sunshineplan/pdfcpu)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Latest release](https://img.shields.io/github/release/pdfcpu/pdfcpu.svg)](https://github.com/pdfcpu/pdfcpu/releases)
+[![Latest release](https://img.shields.io/github/release/pdfcpu/pdfcpu.svg)](https://github.com/sunshineplan/pdfcpu/releases)
 
 <img src="resources/logoSmall.png" width="150">
 
@@ -65,13 +65,13 @@ The main focus lies on strong support for batch processing and scripting via a r
 
 * The main entry point is [pdfcpu.io](https://pdfcpu.io).
 * For CLI examples also go to [pdfcpu.io](https://pdfcpu.io). There you will find explanations of all the commands and their parameters.
-* For API examples of all pdfcpu operations please refer to [GoDoc](https://godoc.org/github.com/pdfcpu/pdfcpu/pkg/api).
+* For API examples of all pdfcpu operations please refer to [GoDoc](https://godoc.org/github.com/sunshineplan/pdfcpu/pkg/api).
 
 ### GoDoc
 
-* [pdfcpu package](https://godoc.org/github.com/pdfcpu/pdfcpu)
-* [pdfcpu API](https://godoc.org/github.com/pdfcpu/pdfcpu/pkg/api)
-* [pdfcpu CLI](https://godoc.org/github.com/pdfcpu/pdfcpu/pkg/cli)
+* [pdfcpu package](https://godoc.org/github.com/sunshineplan/pdfcpu)
+* [pdfcpu API](https://godoc.org/github.com/sunshineplan/pdfcpu/pkg/api)
+* [pdfcpu CLI](https://godoc.org/github.com/sunshineplan/pdfcpu/pkg/cli)
 
 ## Reminder
 
@@ -90,7 +90,7 @@ The main focus lies on strong support for batch processing and scripting via a r
 ## Installation
 
 ### Download
-Get the latest binary [here](https://github.com/pdfcpu/pdfcpu/releases).
+Get the latest binary [here](https://github.com/sunshineplan/pdfcpu/releases).
 
 
 ### Using GOPATH
@@ -98,8 +98,8 @@ Get the latest binary [here](https://github.com/pdfcpu/pdfcpu/releases).
 Required go version for building: go1.15 and up
 
 ```
-go get github.com/pdfcpu/pdfcpu/cmd/...
-cd $GOPATH/src/github.com/pdfcpu/pdfcpu/cmd/pdfcpu
+go get github.com/sunshineplan/pdfcpu/cmd/...
+cd $GOPATH/src/github.com/sunshineplan/pdfcpu/cmd/pdfcpu
 go install
 pdfcpu version
 ```
@@ -107,7 +107,7 @@ pdfcpu version
 ### Using Go Modules
 
 ```
-git clone https://github.com/pdfcpu/pdfcpu
+git clone https://github.com/sunshineplan/pdfcpu
 cd pdfcpu/cmd/pdfcpu
 go install
 pdfcpu version

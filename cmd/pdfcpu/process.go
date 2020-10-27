@@ -24,10 +24,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pdfcpu/pdfcpu/pkg/api"
-	"github.com/pdfcpu/pdfcpu/pkg/cli"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/validate"
+	"github.com/sunshineplan/pdfcpu/pkg/api"
+	"github.com/sunshineplan/pdfcpu/pkg/cli"
+	"github.com/sunshineplan/pdfcpu/pkg/pdfcpu"
+	"github.com/sunshineplan/pdfcpu/pkg/pdfcpu/validate"
 	"github.com/pkg/errors"
 )
 

@@ -21,8 +21,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/pdfcpu/pdfcpu/pkg/font"
-	pdf "github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
+	"github.com/sunshineplan/pdfcpu/pkg/font"
+	pdf "github.com/sunshineplan/pdfcpu/pkg/pdfcpu"
 )
 
 func writeCoreFontDemoContent(p pdf.Page, fontName string) {

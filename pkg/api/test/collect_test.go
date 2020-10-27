@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/pdfcpu/pdfcpu/pkg/api"
+	"github.com/sunshineplan/pdfcpu/pkg/api"
 )
 
 func TestCollect(t *testing.T) {

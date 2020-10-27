@@ -24,9 +24,9 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/hhrutter/tiff"
-	"github.com/pdfcpu/pdfcpu/pkg/filter"
-	"github.com/pdfcpu/pdfcpu/pkg/log"
+	"github.com/sunshineplan/tiff"
+	"github.com/sunshineplan/pdfcpu/pkg/filter"
+	"github.com/sunshineplan/pdfcpu/pkg/log"
 	"github.com/pkg/errors"
 )
 

@@ -21,8 +21,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/pdfcpu/pdfcpu/pkg/log"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
+	"github.com/sunshineplan/pdfcpu/pkg/log"
+	"github.com/sunshineplan/pdfcpu/pkg/pdfcpu"
 )
 
 // NUp rearranges PDF pages or images into page grids and writes the result to w.

@@ -23,7 +23,7 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 
-	"github.com/pdfcpu/pdfcpu/pkg/filter"
+	"github.com/sunshineplan/pdfcpu/pkg/filter"
 	"github.com/pkg/errors"
 )
 

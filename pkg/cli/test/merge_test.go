@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/pdfcpu/pdfcpu/pkg/cli"
+	"github.com/sunshineplan/pdfcpu/pkg/cli"
 )
 
 // Merge all PDFs in testdir into out/test.pdf.

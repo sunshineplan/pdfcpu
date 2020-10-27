@@ -23,8 +23,8 @@ import (
 
 	"strings"
 
-	"github.com/pdfcpu/pdfcpu/pkg/api"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
+	"github.com/sunshineplan/pdfcpu/pkg/api"
+	"github.com/sunshineplan/pdfcpu/pkg/pdfcpu"
 )
 
 var r *regexp.Regexp

@@ -21,8 +21,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/pdfcpu/pdfcpu/pkg/log"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
+	"github.com/sunshineplan/pdfcpu/pkg/log"
+	"github.com/sunshineplan/pdfcpu/pkg/pdfcpu"
 	"github.com/pkg/errors"
 )
 

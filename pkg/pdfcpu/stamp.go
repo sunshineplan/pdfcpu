@@ -30,11 +30,11 @@ import (
 	"strings"
 	"unicode/utf16"
 
-	"github.com/pdfcpu/pdfcpu/internal/corefont/metrics"
-	"github.com/pdfcpu/pdfcpu/pkg/filter"
-	"github.com/pdfcpu/pdfcpu/pkg/font"
-	"github.com/pdfcpu/pdfcpu/pkg/log"
-	"github.com/pdfcpu/pdfcpu/pkg/types"
+	"github.com/sunshineplan/pdfcpu/internal/corefont/metrics"
+	"github.com/sunshineplan/pdfcpu/pkg/filter"
+	"github.com/sunshineplan/pdfcpu/pkg/font"
+	"github.com/sunshineplan/pdfcpu/pkg/log"
+	"github.com/sunshineplan/pdfcpu/pkg/types"
 
 	"github.com/pkg/errors"
 )
