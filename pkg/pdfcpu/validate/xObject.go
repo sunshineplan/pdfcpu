@@ -511,9 +511,7 @@ func validateImageStreamDictPart2(xRefTable *pdf.XRefTable, sd *pdf.StreamDict, 
 }
 
 func validateImageStreamDict(xRefTable *pdf.XRefTable, sd *pdf.StreamDict, isAlternate bool) error {
-
 	dictName := "imageStreamDict"
-
 	var isImageMask bool
 
 	isImageMask, err := validateImageStreamDictPart1(xRefTable, sd, dictName)
@@ -551,10 +549,10 @@ func validateImageStreamDict(xRefTable *pdf.XRefTable, sd *pdf.StreamDict, isAlt
 
 	// Name, name, required for V10
 	// Shall no longer be used.
-	_, err = validateNameEntry(xRefTable, sd.Dict, dictName, "Name", xRefTable.Version() == pdf.V10, pdf.V10, nil)
-	if err != nil {
-		return err
-	}
+	// _, err = validateNameEntry(xRefTable, sd.Dict, dictName, "Name", xRefTable.Version() == pdf.V10, pdf.V10, nil)
+	// if err != nil {
+	// 	return err
+	// }
 
 	// StructParent, integer, optional
 	_, err = validateIntegerEntry(xRefTable, sd.Dict, dictName, "StructParent", OPTIONAL, pdf.V13, nil)
@@ -731,23 +729,42 @@ func validateFormStreamDict(xRefTable *pdf.XRefTable, sd *pdf.StreamDict) error 
 	return validateFormStreamDictPart2(xRefTable, sd.Dict, dictName)
 }
 
+func validateXObjectType(xRefTable *pdf.XRefTable, sd *pdf.StreamDict) error {
+	ss := []string{"XObject"}
+	if xRefTable.ValidationMode == pdf.ValidationRelaxed {
+		ss = append(ss, "Xobject")
+	}
+
+	n, err := validateNameEntry(xRefTable, sd.Dict, "xObjectStreamDict", "Type", OPTIONAL, pdf.V10, func(s string) bool { return pdf.MemberOf(s, ss) })
+	if err != nil {
+		return err
+	}
+
+	// Repair "Xobject" to "XObject".
+	if n != nil && *n == "Xobject" {
+		sd.Dict["Type"] = pdf.Name("XObject")
+	}
+
+	return nil
+}
+
 func validateXObjectStreamDict(xRefTable *pdf.XRefTable, o pdf.Object) error {
 
 	// see 8.8 External Objects
 
 	// Dereference stream dict and ensure it is validated exactly once in order handle
 	// XObjects(forms) with recursive structures like produced by Microsoft.
-	sd, err := xRefTable.DereferenceStreamDictForValidation(o, true)
+	sd, valid, err := xRefTable.DereferenceStreamDict(o)
+	if valid {
+		return nil
+	}
 	if err != nil || sd == nil {
 		return err
 	}
 
 	dictName := "xObjectStreamDict"
 
-	//fmt.Printf("XObjStrD: \n%s\n", sd)
-
-	_, err = validateNameEntry(xRefTable, sd.Dict, dictName, "Type", OPTIONAL, pdf.V10, func(s string) bool { return s == "XObject" })
-	if err != nil {
+	if err := validateXObjectType(xRefTable, sd); err != nil {
 		return err
 	}
 

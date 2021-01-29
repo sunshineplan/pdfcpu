@@ -24,8 +24,12 @@ import (
 
 	"strings"
 
+	"github.com/pdfcpu/pdfcpu/pkg/log"
 	"github.com/pkg/errors"
 )
+
+// ErrInvalidUTF16BE represents an error that gets raised for invalid UTF-16BE byte sequences.
+var ErrInvalidUTF16BE = errors.New("pdfcpu: invalid UTF-16BE detected")
 
 // IsStringUTF16BE checks a string for Big Endian byte order BOM.
 func IsStringUTF16BE(s string) bool {
@@ -51,7 +55,8 @@ func decodeUTF16String(b []byte) (string, error) {
 
 	// We only accept big endian byte order.
 	if !IsUTF16BE(b) {
-		return "", errors.Errorf("decodeUTF16String: not UTF16BE: %v\n", b)
+		log.Debug.Printf("decodeUTF16String: not UTF16BE: %v\n", b)
+		return "", ErrInvalidUTF16BE
 	}
 
 	// Strip BOM.
@@ -114,6 +119,15 @@ func DecodeUTF16String(s string) (string, error) {
 	return decodeUTF16String([]byte(s))
 }
 
+func encodeUTF16String(s string) string {
+	rr := utf16.Encode([]rune(s))
+	bb := []byte{0xFE, 0xFF}
+	for _, r := range rr {
+		bb = append(bb, byte(r>>8), byte(r&0xFF))
+	}
+	return string(bb)
+}
+
 // StringLiteralToString returns the best possible string rep for a string literal.
 func StringLiteralToString(s string) (string, error) {
 	b, err := Unescape(s)
@@ -128,7 +142,10 @@ func StringLiteralToString(s string) (string, error) {
 		return DecodeUTF16String(s1)
 	}
 
-	// if no acceptable UTF16 encoding found, just return str.
+	// if no acceptable UTF16 encoding found, ensure utf8 encoding.
+	if !utf8.ValidString(s1) {
+		s1 = CP1252ToUTF8(s1)
+	}
 	return s1, nil
 }
 

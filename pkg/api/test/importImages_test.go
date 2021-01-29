@@ -25,6 +25,7 @@ import (
 	"testing"
 
 	"github.com/sunshineplan/pdfcpu/pkg/api"
+	"github.com/sunshineplan/pdfcpu/pkg/pdfcpu"
 	pdf "github.com/sunshineplan/pdfcpu/pkg/pdfcpu"
 )
 
@@ -42,7 +43,7 @@ func testImportImages(t *testing.T, msg string, imgFiles []string, outFile, impC
 	// which overrides all other import conf parms.
 	imp := pdf.DefaultImportConfig()
 	if impConf != "" {
-		if imp, err = pdf.ParseImportDetails(impConf); err != nil {
+		if imp, err = api.Import(impConf, pdfcpu.POINTS); err != nil {
 			t.Fatalf("%s %s: %v\n", msg, outFile, err)
 		}
 	}
@@ -71,11 +72,11 @@ func TestImportImages(t *testing.T) {
 			false},
 
 		// Import an image as a new page of the existing output file.
-		// {"TestImportImage",
-		// 	[]string{filepath.Join(resDir, "logoSmall.png")},
-		// 	"importImage.pdf",
-		// 	"",
-		// 	true},
+		{"TestImportImage",
+			[]string{filepath.Join(resDir, "logoSmall.png")},
+			"importImage.pdf",
+			"",
+			true},
 
 		//Import images by creating an A3 page for each image.
 		//Images are page centered with 1.0 relative scaling.

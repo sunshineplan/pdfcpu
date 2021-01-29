@@ -158,11 +158,11 @@ func TestManipulateContext(t *testing.T) {
 	// Manipulate the PDF Context.
 	// Eg. Let's stamp all pages with pageCount and current timestamp.
 	text := fmt.Sprintf("Pages: %d \n Current time: %v", ctx.PageCount, time.Now())
-	wm, err := pdfcpu.ParseTextWatermarkDetails(text, "font:Times-Italic, scale:.9", true)
+	wm, err := api.TextWatermark(text, "font:Times-Italic, scale:.9", true, false, pdfcpu.POINTS)
 	if err != nil {
 		t.Fatalf("%s: ParseTextWatermarkDetails: %v\n", msg, err)
 	}
-	if err := api.WatermarkContext(ctx, nil, wm); err != nil {
+	if err := ctx.AddWatermarks(nil, wm); err != nil {
 		t.Fatalf("%s: WatermarkContext: %v\n", msg, err)
 	}
 
@@ -176,7 +176,7 @@ func TestInfo(t *testing.T) {
 	msg := "TestInfo"
 	inFile := filepath.Join(inDir, "5116.DCT_Filter.pdf")
 
-	if _, err := api.InfoFile(inFile, nil); err != nil {
+	if _, err := api.InfoFile(inFile, nil, nil); err != nil {
 		t.Fatalf("%s: %v\n", msg, err)
 	}
 }

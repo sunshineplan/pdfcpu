@@ -182,7 +182,12 @@ func ExtractAttachments(cmd *Command) ([]string, error) {
 
 // Info gathers information about inFile and returns the result as []string.
 func Info(cmd *Command) ([]string, error) {
-	return api.InfoFile(*cmd.InFile, cmd.Conf)
+	return api.InfoFile(*cmd.InFile, cmd.PageSelection, cmd.Conf)
+}
+
+// CreateCheatSheetsFonts creates single page PDF cheat sheets for user fonts in current dir.
+func CreateCheatSheetsFonts(cmd *Command) ([]string, error) {
+	return nil, api.CreateCheatSheetsUserFonts(cmd.InFiles)
 }
 
 // ListFonts gathers information about supported fonts and returns the result as []string.
@@ -190,7 +195,7 @@ func ListFonts(cmd *Command) ([]string, error) {
 	return api.ListFonts()
 }
 
-// InstallFonts gathers information about supported fonts and returns the result as []string.
+// InstallFonts installs True Type fonts into the pdfcpu pconfig dir.
 func InstallFonts(cmd *Command) ([]string, error) {
 	return nil, api.InstallFonts(cmd.InFiles)
 }
@@ -228,4 +233,24 @@ func RemoveProperties(cmd *Command) ([]string, error) {
 // Collect creates a custom page sequence for selected pages of inFile and writes result to outFile.
 func Collect(cmd *Command) ([]string, error) {
 	return nil, api.CollectFile(*cmd.InFile, *cmd.OutFile, cmd.PageSelection, cmd.Conf)
+}
+
+// ListBoxes returns inFile's page boundaries.
+func ListBoxes(cmd *Command) ([]string, error) {
+	return api.ListBoxesFile(*cmd.InFile, cmd.PageSelection, cmd.PageBoundaries, cmd.Conf)
+}
+
+// AddBoxes adds page boundaries to inFile's page tree and writes the result to outFile.
+func AddBoxes(cmd *Command) ([]string, error) {
+	return nil, api.AddBoxesFile(*cmd.InFile, *cmd.OutFile, cmd.PageSelection, cmd.PageBoundaries, cmd.Conf)
+}
+
+// RemoveBoxes deletes page boundaries from inFile's page tree and writes the result to outFile.
+func RemoveBoxes(cmd *Command) ([]string, error) {
+	return nil, api.RemoveBoxesFile(*cmd.InFile, *cmd.OutFile, cmd.PageSelection, cmd.PageBoundaries, cmd.Conf)
+}
+
+// Crop adds crop boxes for selected pages of inFile and writes result to outFile.
+func Crop(cmd *Command) ([]string, error) {
+	return nil, api.CropFile(*cmd.InFile, *cmd.OutFile, cmd.PageSelection, cmd.Box, cmd.Conf)
 }

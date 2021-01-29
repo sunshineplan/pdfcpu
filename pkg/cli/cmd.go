@@ -24,25 +24,27 @@ import (
 
 // Command represents an execution context.
 type Command struct {
-	Mode          pdfcpu.CommandMode
-	InFile        *string
-	InFiles       []string
-	InDir         *string
-	OutFile       *string
-	OutDir        *string
-	PageSelection []string
-	Conf          *pdfcpu.Configuration
-	PWOld         *string
-	PWNew         *string
-	Watermark     *pdfcpu.Watermark
-	Span          int
-	Import        *pdfcpu.Import
-	Rotation      int
-	NUp           *pdfcpu.NUp
-	Input         io.ReadSeeker
-	Inputs        []io.ReadSeeker
-	Output        io.Writer
-	StringMap     map[string]string
+	Mode           pdfcpu.CommandMode
+	InFile         *string
+	InFiles        []string
+	InDir          *string
+	OutFile        *string
+	OutDir         *string
+	PageSelection  []string
+	Conf           *pdfcpu.Configuration
+	PWOld          *string
+	PWNew          *string
+	Watermark      *pdfcpu.Watermark
+	Span           int
+	Import         *pdfcpu.Import
+	Rotation       int
+	NUp            *pdfcpu.NUp
+	Input          io.ReadSeeker
+	Inputs         []io.ReadSeeker
+	Output         io.Writer
+	StringMap      map[string]string
+	Box            *pdfcpu.Box
+	PageBoundaries *pdfcpu.PageBoundaries
 }
 
 var cmdMap = map[pdfcpu.CommandMode]func(cmd *Command) ([]string, error){
@@ -77,6 +79,7 @@ var cmdMap = map[pdfcpu.CommandMode]func(cmd *Command) ([]string, error){
 	pdfcpu.ROTATE:                  Rotate,
 	pdfcpu.NUP:                     NUp,
 	pdfcpu.INFO:                    Info,
+	pdfcpu.CHEATSHEETSFONTS:        CreateCheatSheetsFonts,
 	pdfcpu.INSTALLFONTS:            InstallFonts,
 	pdfcpu.LISTFONTS:               ListFonts,
 	pdfcpu.LISTKEYWORDS:            processKeywords,
@@ -86,6 +89,10 @@ var cmdMap = map[pdfcpu.CommandMode]func(cmd *Command) ([]string, error){
 	pdfcpu.ADDPROPERTIES:           processProperties,
 	pdfcpu.REMOVEPROPERTIES:        processProperties,
 	pdfcpu.COLLECT:                 Collect,
+	pdfcpu.LISTBOXES:               processPageBoundaries,
+	pdfcpu.ADDBOXES:                processPageBoundaries,
+	pdfcpu.REMOVEBOXES:             processPageBoundaries,
+	pdfcpu.CROP:                    processPageBoundaries,
 }
 
 // ValidateCommand creates a new command to validate a file.
@@ -495,15 +502,16 @@ func NUpCommand(inFiles []string, outFile string, pageSelection []string, nUp *p
 }
 
 // InfoCommand creates a new command to output information about inFile.
-func InfoCommand(inFile string, conf *pdfcpu.Configuration) *Command {
+func InfoCommand(inFile string, pageSelection []string, conf *pdfcpu.Configuration) *Command {
 	if conf == nil {
 		conf = pdfcpu.NewDefaultConfiguration()
 	}
 	conf.Cmd = pdfcpu.INFO
 	return &Command{
-		Mode:   pdfcpu.INFO,
-		InFile: &inFile,
-		Conf:   conf}
+		Mode:          pdfcpu.INFO,
+		InFile:        &inFile,
+		PageSelection: pageSelection,
+		Conf:          conf}
 }
 
 // ListFontsCommand returns a list of supported fonts.
@@ -525,6 +533,18 @@ func InstallFontsCommand(fontFiles []string, conf *pdfcpu.Configuration) *Comman
 	conf.Cmd = pdfcpu.INSTALLFONTS
 	return &Command{
 		Mode:    pdfcpu.INSTALLFONTS,
+		InFiles: fontFiles,
+		Conf:    conf}
+}
+
+// CreateCheatSheetsFontsCommand creates single page PDF cheat sheets in current dir.
+func CreateCheatSheetsFontsCommand(fontFiles []string, conf *pdfcpu.Configuration) *Command {
+	if conf == nil {
+		conf = pdfcpu.NewDefaultConfiguration()
+	}
+	conf.Cmd = pdfcpu.CHEATSHEETSFONTS
+	return &Command{
+		Mode:    pdfcpu.CHEATSHEETSFONTS,
 		InFiles: fontFiles,
 		Conf:    conf}
 }
@@ -620,5 +640,64 @@ func CollectCommand(inFile, outFile string, pageSelection []string, conf *pdfcpu
 		InFile:        &inFile,
 		OutFile:       &outFile,
 		PageSelection: pageSelection,
+		Conf:          conf}
+}
+
+// ListBoxesCommand creates a new command to list page boundaries for selected pages.
+func ListBoxesCommand(inFile string, pageSelection []string, pb *pdfcpu.PageBoundaries, conf *pdfcpu.Configuration) *Command {
+	if conf == nil {
+		conf = pdfcpu.NewDefaultConfiguration()
+	}
+	conf.Cmd = pdfcpu.LISTBOXES
+	return &Command{
+		Mode:           pdfcpu.LISTBOXES,
+		InFile:         &inFile,
+		PageSelection:  pageSelection,
+		PageBoundaries: pb,
+		Conf:           conf}
+}
+
+// AddBoxesCommand creates a new command to add page boundaries for selected pages.
+func AddBoxesCommand(inFile, outFile string, pageSelection []string, pb *pdfcpu.PageBoundaries, conf *pdfcpu.Configuration) *Command {
+	if conf == nil {
+		conf = pdfcpu.NewDefaultConfiguration()
+	}
+	conf.Cmd = pdfcpu.ADDBOXES
+	return &Command{
+		Mode:           pdfcpu.ADDBOXES,
+		InFile:         &inFile,
+		OutFile:        &outFile,
+		PageSelection:  pageSelection,
+		PageBoundaries: pb,
+		Conf:           conf}
+}
+
+// RemoveBoxesCommand creates a new command to remove page boundaries for selected pages.
+func RemoveBoxesCommand(inFile, outFile string, pageSelection []string, pb *pdfcpu.PageBoundaries, conf *pdfcpu.Configuration) *Command {
+	if conf == nil {
+		conf = pdfcpu.NewDefaultConfiguration()
+	}
+	conf.Cmd = pdfcpu.REMOVEBOXES
+	return &Command{
+		Mode:           pdfcpu.REMOVEBOXES,
+		InFile:         &inFile,
+		OutFile:        &outFile,
+		PageSelection:  pageSelection,
+		PageBoundaries: pb,
+		Conf:           conf}
+}
+
+// CropCommand creates a new command to apply a cropBox to selected pages.
+func CropCommand(inFile, outFile string, pageSelection []string, box *pdfcpu.Box, conf *pdfcpu.Configuration) *Command {
+	if conf == nil {
+		conf = pdfcpu.NewDefaultConfiguration()
+	}
+	conf.Cmd = pdfcpu.CROP
+	return &Command{
+		Mode:          pdfcpu.CROP,
+		InFile:        &inFile,
+		OutFile:       &outFile,
+		PageSelection: pageSelection,
+		Box:           box,
 		Conf:          conf}
 }

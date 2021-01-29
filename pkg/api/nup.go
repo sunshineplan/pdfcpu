@@ -25,6 +25,59 @@ import (
 	"github.com/sunshineplan/pdfcpu/pkg/pdfcpu"
 )
 
+// PDFNUp returns an NUp configuration for Nup-ing PDF files.
+func PDFNUp(val int, desc string) (*pdfcpu.NUp, error) {
+	return pdfcpu.PDFNUpConfig(val, desc)
+}
+
+// ImageNUp returns an NUp configuration for Nup-ing image files.
+func ImageNUp(val int, desc string) (*pdfcpu.NUp, error) {
+	return pdfcpu.ImageNUpConfig(val, desc)
+}
+
+// PDFGrid returns a grid configuration for Nup-ing PDF files.
+func PDFGrid(rows, cols int, desc string) (*pdfcpu.NUp, error) {
+	return pdfcpu.PDFGridConfig(rows, cols, desc)
+}
+
+// ImageGrid returns a grid configuration for Nup-ing image files.
+func ImageGrid(rows, cols int, desc string) (*pdfcpu.NUp, error) {
+	return pdfcpu.ImageGridConfig(rows, cols, desc)
+}
+
+// NUpFromImage creates a single page n-up PDF for one image
+// or a sequence of n-up pages for more than one image.
+func NUpFromImage(conf *pdfcpu.Configuration, imageFileNames []string, nup *pdfcpu.NUp) (*pdfcpu.Context, error) {
+	if nup.PageDim == nil {
+		// Set default paper size.
+		nup.PageDim = pdfcpu.PaperSize[nup.PageSize]
+	}
+
+	ctx, err := pdfcpu.CreateContextWithXRefTable(conf, nup.PageDim)
+	if err != nil {
+		return nil, err
+	}
+
+	pagesIndRef, err := ctx.Pages()
+	if err != nil {
+		return nil, err
+	}
+
+	// This is the page tree root.
+	pagesDict, err := ctx.DereferenceDict(*pagesIndRef)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(imageFileNames) == 1 {
+		err = pdfcpu.NUpFromOneImage(ctx, imageFileNames[0], nup, pagesDict, pagesIndRef)
+	} else {
+		err = pdfcpu.NUpFromMultipleImages(ctx, imageFileNames, nup, pagesDict, pagesIndRef)
+	}
+
+	return ctx, err
+}
+
 // NUp rearranges PDF pages or images into page grids and writes the result to w.
 // Either rs or imgFiles will be used.
 func NUp(rs io.ReadSeeker, w io.Writer, imgFiles, selectedPages []string, nup *pdfcpu.NUp, conf *pdfcpu.Configuration) error {
@@ -42,7 +95,7 @@ func NUp(rs io.ReadSeeker, w io.Writer, imgFiles, selectedPages []string, nup *p
 
 	if nup.ImgInputFile {
 
-		if ctx, err = pdfcpu.NUpFromImage(conf, imgFiles, nup); err != nil {
+		if ctx, err = NUpFromImage(conf, imgFiles, nup); err != nil {
 			return err
 		}
 
@@ -63,7 +116,7 @@ func NUp(rs io.ReadSeeker, w io.Writer, imgFiles, selectedPages []string, nup *p
 
 		// New pages get added to ctx while old pages get deleted.
 		// This way we avoid migrating objects between contexts.
-		if err = pdfcpu.NUpFromPDF(ctx, pages, nup); err != nil {
+		if err = ctx.NUpFromPDF(pages, nup); err != nil {
 			return err
 		}
 

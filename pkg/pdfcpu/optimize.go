@@ -374,7 +374,7 @@ func handleDuplicateImageObject(ctx *Context, imageDict *StreamDict, resourceNam
 // Get rid of redundant XObjects e.g. embedded images.
 func optimizeXObjectResourcesDict(ctx *Context, rDict Dict, pageNumber, pageObjNumber int) error {
 
-	log.Optimize.Printf("optimizeXObjectResourcesDict begin: %s\n", rDict)
+	log.Optimize.Printf("optimizeXObjectResourcesDict page#%dbegin: %s\n", pageObjNumber, rDict)
 
 	pageImages := pageImages(ctx, pageNumber)
 
@@ -393,7 +393,7 @@ func optimizeXObjectResourcesDict(ctx *Context, rDict Dict, pageNumber, pageObjN
 		// We are dealing with a new XObject..
 		// Dereference the XObject stream dict.
 
-		osd, err := ctx.DereferenceStreamDictForValidation(indRef, false)
+		osd, _, err := ctx.DereferenceStreamDict(indRef)
 		if err != nil {
 			return err
 		}
@@ -522,6 +522,11 @@ func optimizeResources(ctx *Context, resourcesDict Dict, pageNumber, pageObjNumb
 // Process the resources dictionary for given page number and optimize by removing redundant resources.
 func parseResourcesDict(ctx *Context, pageDict Dict, pageNumber, pageObjNumber int) error {
 
+	if ctx.Optimize.Cache[pageObjNumber] {
+		return nil
+	}
+	ctx.Optimize.Cache[pageObjNumber] = true
+
 	// The logical pageNumber is pageNumber+1.
 	log.Optimize.Printf("parseResourcesDict begin page: %d, object:%d\n", pageNumber+1, pageObjNumber)
 
@@ -558,6 +563,8 @@ func parsePagesDict(ctx *Context, pagesDict Dict, pageNumber int) (int, error) {
 	}
 
 	log.Optimize.Printf("parsePagesDict: This page node has %d pages\n", int(count.(Integer)))
+
+	ctx.Optimize.Cache = map[int]bool{}
 
 	// Iterate over page tree.
 	for _, v := range pagesDict.ArrayEntry("Kids") {
@@ -764,7 +771,7 @@ func streamLengthFontFile(xRefTable *XRefTable, indirectRef *IndirectRef) (*int6
 
 	objectNumber := indirectRef.ObjectNumber
 
-	sd, err := xRefTable.DereferenceStreamDict(*indirectRef)
+	sd, _, err := xRefTable.DereferenceStreamDict(*indirectRef)
 	if err != nil {
 		return nil, err
 	}
@@ -1110,10 +1117,10 @@ func fixIndirectObject(ctx *Context, ir *IndirectRef) error {
 	objNr := int(ir.ObjectNumber)
 	genNr := int(ir.GenerationNumber)
 
-	if ctx.Optimize.FixTable[objNr] {
+	if ctx.Optimize.Cache[objNr] {
 		return nil
 	}
-	ctx.Optimize.FixTable[objNr] = true
+	ctx.Optimize.Cache[objNr] = true
 
 	entry, found := ctx.Find(objNr)
 	if !found {

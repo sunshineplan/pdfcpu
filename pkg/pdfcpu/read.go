@@ -32,7 +32,6 @@ import (
 
 const (
 	defaultBufSize = 1024
-	//unknownDelimiter = byte(0)
 )
 
 // ReadFile reads in a PDF file and builds an internal structure holding its cross reference table aka the Context.
@@ -80,17 +79,9 @@ func Read(rs io.ReadSeeker, conf *Configuration) (*Context, error) {
 		return nil, err
 	}
 
-	// Some PDFWriters write an incorrent Size into trailer.
+	// Some PDFWriters write an incorrect Size into trailer.
 	if *ctx.XRefTable.Size < len(ctx.XRefTable.Table) {
 		*ctx.XRefTable.Size = len(ctx.XRefTable.Table)
-	}
-
-	if f, ok := rs.(*os.File); ok {
-		fileInfo, err := f.Stat()
-		if err != nil {
-			return nil, err
-		}
-		ctx.Read.FileSize = fileInfo.Size()
 	}
 
 	log.Read.Println("Read: end")
@@ -158,7 +149,8 @@ func newPositionedReader(rs io.ReadSeeker, offset *int64) (*bufio.Reader, error)
 
 // Get the file offset of the last XRefSection.
 // Go to end of file and search backwards for the first occurrence of startxref {offset} %%EOF
-func offsetLastXRefSection(ctx *Context) (*int64, error) {
+// xref at 114172
+func offsetLastXRefSection(ctx *Context, skip int64) (*int64, error) {
 
 	rs := ctx.Read.rs
 
@@ -170,7 +162,7 @@ func offsetLastXRefSection(ctx *Context) (*int64, error) {
 
 	for i := 1; offset == 0; i++ {
 
-		off, err := rs.Seek(-int64(i)*bufSize, io.SeekEnd)
+		off, err := rs.Seek(-int64(i)*bufSize-skip, io.SeekEnd)
 		if err != nil {
 			return nil, errors.New("pdfcpu: can't find last xref section")
 		}
@@ -203,10 +195,9 @@ func offsetLastXRefSection(ctx *Context) (*int64, error) {
 
 		p = p[:posEOF]
 		offset, err = strconv.ParseInt(strings.TrimSpace(string(p)), 10, 64)
-		if err != nil {
+		if err != nil || offset >= ctx.Read.FileSize {
 			return nil, errors.New("pdfcpu: corrupted last xref section")
 		}
-
 	}
 
 	log.Read.Printf("Offset last xrefsection: %d\n", offset)
@@ -613,18 +604,22 @@ func parseXRefStream(rd io.Reader, offset *int64, ctx *Context) (prevOffset *int
 		return nil, err
 	}
 
-	// Create xRefTableEntry for XRefStreamDict.
-	entry :=
-		XRefTableEntry{
-			Free:       false,
-			Offset:     offset,
-			Generation: generationNumber,
-			Object:     *sd}
+	if ctx.XRefTable.Exists(*objectNumber) {
+		log.Read.Printf("parseXRefStream: Skip entry %d - already assigned\n", *objectNumber)
+	} else {
+		// Create xRefTableEntry for XRefStreamDict.
+		entry :=
+			XRefTableEntry{
+				Free:       false,
+				Offset:     offset,
+				Generation: generationNumber,
+				Object:     *sd}
 
-	log.Read.Printf("parseXRefStream: Insert new xRefTable entry for Object %d\n", *objectNumber)
+		log.Read.Printf("parseXRefStream: Insert new xRefTable entry for Object %d\n", *objectNumber)
 
-	ctx.Table[*objectNumber] = &entry
-	ctx.Read.XRefStreams[*objectNumber] = true
+		ctx.Table[*objectNumber] = &entry
+		ctx.Read.XRefStreams[*objectNumber] = true
+	}
 	prevOffset = sd.PreviousOffset
 
 	log.Read.Println("parseXRefStream: end")
@@ -953,7 +948,7 @@ func processTrailer(ctx *Context, s *bufio.Scanner, line string) (*int64, error)
 }
 
 // Parse xRef section into corresponding number of xRef table entries.
-func parseXRefSection(s *bufio.Scanner, ctx *Context) (*int64, error) {
+func parseXRefSection(s *bufio.Scanner, ctx *Context, ssCount *int) (*int64, error) {
 	log.Read.Println("parseXRefSection begin")
 
 	line, err := scanLine(s)
@@ -971,6 +966,7 @@ func parseXRefSection(s *bufio.Scanner, ctx *Context) (*int64, error) {
 		if err = parseXRefTableSubSection(s, ctx.XRefTable, fields); err != nil {
 			return nil, err
 		}
+		*ssCount++
 
 		// trailer or another xref table subsection ?
 		if line, err = scanLine(s); err != nil {
@@ -1016,7 +1012,7 @@ func headerVersion(rs io.ReadSeeker) (v *Version, eolCount int, err error) {
 		return nil, 0, err
 	}
 
-	buf := make([]byte, 20)
+	buf := make([]byte, 100)
 	if _, err = rs.Read(buf); err != nil {
 		return nil, 0, err
 	}
@@ -1024,9 +1020,16 @@ func headerVersion(rs io.ReadSeeker) (v *Version, eolCount int, err error) {
 	s := string(buf)
 	prefix := "%PDF-"
 
-	if len(s) < 8 || !strings.HasPrefix(s, prefix) {
+	if len(s) < 8 {
 		return nil, 0, errCorruptHeader
 	}
+
+	// Allow for leading bytes before %PDF-
+	i := strings.Index(s, prefix)
+	if i < 0 {
+		return nil, 0, errCorruptHeader
+	}
+	s = s[i:]
 
 	pdfVersion, err := PDFVersion(s[len(prefix) : len(prefix)+3])
 	if err != nil {
@@ -1037,16 +1040,18 @@ func headerVersion(rs io.ReadSeeker) (v *Version, eolCount int, err error) {
 	s = strings.TrimLeft(s, "\t\f ")
 
 	// Detect the used eol which should be 1 (0x00, 0x0D) or 2 chars (0x0D0A)long.
-	// %PDF-1.x{whiteSpace}{eol}
-	if s[0] == 0x0A {
+	// %PDF-1.x{whiteSpace}{text}{eol} or
+	i = strings.IndexAny(s, "\x0A\x0D")
+	if i < 0 {
+		return nil, 0, errCorruptHeader
+	}
+	if s[i] == 0x0A {
 		eolCount = 1
-	} else if s[0] == 0x0D {
+	} else if s[i] == 0x0D {
 		eolCount = 1
-		if s[9] == 0x0A {
+		if s[i+1] == 0x0A {
 			eolCount = 2
 		}
-	} else {
-		return nil, 0, errCorruptHeader
 	}
 
 	log.Read.Printf("headerVersion: end, found header version: %s\n", pdfVersion)
@@ -1150,6 +1155,27 @@ func bypassXrefSection(ctx *Context) error {
 	return nil
 }
 
+func postProcess(ctx *Context, xrefSectionCount int) {
+	// Ensure free object #0 if exactly one xref subsection
+	// and in one of the following weird situations:
+	if xrefSectionCount == 1 && !ctx.Exists(0) {
+		if *ctx.Size == len(ctx.Table)+1 {
+			// Hack for #262
+			// Create free object 0 from scratch if the free list head is missing.
+			g0 := FreeHeadGeneration
+			z := int64(0)
+			ctx.Table[0] = &XRefTableEntry{Free: true, Offset: &z, Generation: &g0}
+		} else {
+			// Hack for #250: A friendly 🤢 to the devs of the HP Scanner & Printer software utility.
+			// Create free object 0 by shifting down all objects by one.
+			for i := 1; i <= *ctx.Size; i++ {
+				ctx.Table[i-1] = ctx.Table[i]
+			}
+			delete(ctx.Table, *ctx.Size)
+		}
+	}
+}
+
 // Build XRefTable by reading XRef streams or XRef sections.
 func buildXRefTableStartingAt(ctx *Context, offset *int64) error {
 
@@ -1164,9 +1190,22 @@ func buildXRefTableStartingAt(ctx *Context, offset *int64) error {
 
 	ctx.HeaderVersion = hv
 	ctx.Read.EolCount = eolCount
+	offs := map[int64]bool{}
+	xrefSectionCount := 0
 
 	for offset != nil {
 
+		if offs[*offset] {
+			offset, err = offsetLastXRefSection(ctx, ctx.Read.FileSize-*offset)
+			if err != nil {
+				return err
+			}
+			if offs[*offset] {
+				return nil
+			}
+		}
+
+		offs[*offset] = true
 		rd, err := newPositionedReader(rs, offset)
 		if err != nil {
 			return err
@@ -1184,11 +1223,10 @@ func buildXRefTableStartingAt(ctx *Context, offset *int64) error {
 
 		if strings.TrimSpace(line) == "xref" {
 			log.Read.Println("buildXRefTableStartingAt: found xref section")
-			if offset, err = parseXRefSection(s, ctx); err != nil {
+			if offset, err = parseXRefSection(s, ctx, &xrefSectionCount); err != nil {
 				return err
 			}
 		} else {
-
 			log.Read.Println("buildXRefTableStartingAt: found xref stream")
 			ctx.Read.UsingXRefStreams = true
 			rd, err = newPositionedReader(rs, offset)
@@ -1202,6 +1240,8 @@ func buildXRefTableStartingAt(ctx *Context, offset *int64) error {
 			}
 		}
 	}
+
+	postProcess(ctx, xrefSectionCount)
 
 	log.Read.Println("buildXRefTableStartingAt: end")
 
@@ -1217,7 +1257,7 @@ func readXRefTable(ctx *Context) (err error) {
 
 	log.Read.Println("readXRefTable: begin")
 
-	offset, err := offsetLastXRefSection(ctx)
+	offset, err := offsetLastXRefSection(ctx, 0)
 	if err != nil {
 		return
 	}
@@ -1622,6 +1662,14 @@ func object(ctx *Context, offset int64, objNr, genNr int) (o Object, endInd, str
 		log.Read.Printf("object %d: non matching objNr(%d) or generationNumber(%d) tags found.\n", objNr, *objectNr, *generationNr)
 	}
 
+	l = strings.TrimSpace(l)
+	if len(l) == 0 {
+		// 7.3.9
+		// Specifying the null object as the value of a dictionary entry (7.3.7, "Dictionary Objects")
+		// shall be equivalent to omitting the entry entirely.
+		return nil, endInd, streamInd, streamOffset, err
+	}
+
 	o, err = parseObject(&l)
 
 	return o, endInd, streamInd, streamOffset, err
@@ -1781,7 +1829,7 @@ func readContentStream(rd io.Reader, streamLength int) ([]byte, error) {
 			if eob < 0 {
 				return nil, err
 			}
-			return buf[:eob-1], nil
+			return buf[:eob], nil
 		}
 
 		log.Read.Printf("readContentStream: count=%d, buflen=%d(%X)\n", count, len(buf), len(buf))

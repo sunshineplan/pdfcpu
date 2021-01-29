@@ -17,11 +17,12 @@ limitations under the License.
 package test
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 
 	"github.com/sunshineplan/pdfcpu/pkg/api"
-	pdf "github.com/sunshineplan/pdfcpu/pkg/pdfcpu"
+	"github.com/sunshineplan/pdfcpu/pkg/pdfcpu"
 )
 
 func testAddWatermarks(t *testing.T, msg, inFile, outFile string, selectedPages []string, mode, modeParam, desc string, onTop bool) {
@@ -59,7 +60,6 @@ func TestAddWatermarks(t *testing.T) {
 		modeParm        string
 		wmConf          string
 	}{
-		// Add text watermark to all pages of inFile starting at page 1 using a rotation angle of 20 degrees.
 		{"TestWatermarkText",
 			"Walden.pdf",
 			"TextDefaults.pdf",
@@ -371,7 +371,7 @@ func TestAddWatermarks(t *testing.T) {
 			filepath.Join(resDir, "logoSmall.png"),
 			"scale:.33 abs, rot:180"},
 
-		// Add a PDF stamp to all pages of inFile using the 3rd page of pdfFile
+		// Add a PDF stamp to all pages of inFile using the 1st page of pdfFile
 		// and rotate along the 2nd diagonal running from upper left to lower right corner.
 		{"TestWatermarkPDF",
 			"Walden.pdf",
@@ -396,6 +396,38 @@ func TestAddWatermarks(t *testing.T) {
 	}
 }
 
+func TestCropBox(t *testing.T) {
+	msg := "TestCropBox"
+	inFile := filepath.Join(inDir, "empty.pdf")
+	outFile := filepath.Join("../../samples/stamp/pdf", "PdfWithCropBox.pdf")
+	pdfFile := filepath.Join(inDir, "grid_example.pdf")
+
+	// Create a context.
+	ctx, err := api.ReadContextFile(inFile)
+	if err != nil {
+		t.Fatalf("%s readContext: %v\n", msg, err)
+	}
+
+	for _, pos := range []string{"tl", "tc", "tr", "l", "c", "r", "bl", "bc", "br"} {
+		wm, err := api.PDFWatermark(pdfFile+":1", fmt.Sprintf("sc:.25 rel, pos:%s, rot:0", pos), true, false, pdfcpu.POINTS)
+		if err != nil {
+			t.Fatalf("%s %s: %v\n", msg, outFile, err)
+		}
+		if err := ctx.AddWatermarks(nil, wm); err != nil {
+			t.Fatalf("%s %s: %v\n", msg, outFile, err)
+		}
+	}
+
+	// Write context to file.
+	if err := api.WriteContextFile(ctx, outFile); err != nil {
+		t.Fatalf("%s write: %v\n", msg, err)
+	}
+
+	if err := api.ValidateFile(outFile, nil); err != nil {
+		t.Fatalf("%s: %v\n", msg, err)
+	}
+}
+
 func hasWatermarks(inFile string, t *testing.T) bool {
 	t.Helper()
 	ok, err := api.HasWatermarksFile(inFile, nil)
@@ -416,8 +448,10 @@ func TestStampingLifecyle(t *testing.T) {
 		t.Fatalf("Watermarks found: %s\n", inFile)
 	}
 
+	unit := pdfcpu.POINTS
+
 	// Stamp all pages.
-	wm, err := pdf.ParseTextWatermarkDetails("Demo", "", onTop)
+	wm, err := api.TextWatermark("Demo", "", onTop, false, unit)
 	if err != nil {
 		t.Fatalf("%s %s: %v\n", msg, outFile, err)
 	}
@@ -431,18 +465,17 @@ func TestStampingLifecyle(t *testing.T) {
 	}
 
 	// // Update stamp on page 1.
-	wm, err = pdf.ParseTextWatermarkDetails("Confidential", "", onTop)
+	wm, err = api.TextWatermark("Confidential", "", onTop, true, unit)
 	if err != nil {
 		t.Fatalf("%s %s: %v\n", msg, outFile, err)
 	}
-	wm.Update = true
 	if err := api.AddWatermarksFile(outFile, "", []string{"1"}, wm, nil); err != nil {
 		t.Fatalf("%s %s: %v\n", msg, outFile, err)
 	}
 
 	// Add another stamp on top for all pages.
 	// This is a redish transparent footer.
-	wm, err = pdf.ParseTextWatermarkDetails("Footer", "pos:bc, c:0.8 0 0, op:.6, rot:0", onTop)
+	wm, err = api.TextWatermark("Footer", "pos:bc, c:0.8 0 0, op:.6, rot:0", onTop, false, unit)
 	if err != nil {
 		t.Fatalf("%s %s: %v\n", msg, outFile, err)
 	}

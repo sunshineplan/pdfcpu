@@ -124,7 +124,7 @@ func validateNames(xRefTable *pdf.XRefTable, rootDict pdf.Dict, required bool, s
 		if err != nil {
 			return err
 		}
-		if d == nil {
+		if d == nil || len(d) == 0 {
 			continue
 		}
 
@@ -322,7 +322,7 @@ func validateMetadata(xRefTable *pdf.XRefTable, d pdf.Dict, required bool, since
 		return err
 	}
 
-	_, err = validateNameEntry(xRefTable, sd.Dict, dictName, "SubType", OPTIONAL, sinceVersion, func(s string) bool { return s == "XML" })
+	_, err = validateNameEntry(xRefTable, sd.Dict, dictName, "Subtype", OPTIONAL, sinceVersion, func(s string) bool { return s == "XML" })
 
 	return err
 }
