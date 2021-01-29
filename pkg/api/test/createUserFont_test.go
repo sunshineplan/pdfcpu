@@ -19,8 +19,8 @@ package test
 import (
 	"testing"
 
-	"github.com/pdfcpu/pdfcpu/pkg/api"
-	pdf "github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
+	"github.com/sunshineplan/pdfcpu/pkg/api"
+	pdf "github.com/sunshineplan/pdfcpu/pkg/pdfcpu"
 )
 
 const (

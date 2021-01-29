@@ -21,9 +21,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/pdfcpu/pdfcpu/pkg/log"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
 	"github.com/pkg/errors"
+	"github.com/sunshineplan/pdfcpu/pkg/log"
+	"github.com/sunshineplan/pdfcpu/pkg/pdfcpu"
 )
 
 // PageBoundariesFromBoxList parses a list of box types.
